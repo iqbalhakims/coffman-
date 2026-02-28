@@ -16,14 +16,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "name and role are required" }, { status: 400 });
   }
 
-  const staff = await prisma.staff.create({
-    data: {
-      name,
-      role,
-      phone: phone || null,
-      joinedAt: joinedAt ? new Date(joinedAt) : undefined,
-    },
-  });
-
-  return NextResponse.json(staff, { status: 201 });
+  try {
+    const staff = await prisma.staff.create({
+      data: {
+        name,
+        role,
+        phone: phone || null,
+        joinedAt: joinedAt ? new Date(joinedAt) : undefined,
+      },
+    });
+    return NextResponse.json(staff, { status: 201 });
+  } catch (err) {
+    console.error("POST /api/staff error:", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }

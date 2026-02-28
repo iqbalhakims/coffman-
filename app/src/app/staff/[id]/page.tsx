@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StaffForm } from "@/components/staff/StaffForm";
+import { AttendanceTab } from "@/components/staff/AttendanceTab";
+import { LeaveTab } from "@/components/staff/LeaveTab";
 import type { Staff } from "@/lib/types";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -13,11 +15,14 @@ const ROLE_LABEL: Record<string, string> = {
   BARISTA: "Barista",
 };
 
+type Tab = "overview" | "attendance" | "leave";
+
 export default function StaffDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [data, setData] = useState<Staff | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>("overview");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -30,7 +35,7 @@ export default function StaffDetailPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   async function handleDelete() {
-    if (!confirm("Delete this staff member?")) return;
+    if (!confirm("Delete this staff member? This will also remove all their attendance and leave records.")) return;
     await fetch(`/api/staff/${id}`, { method: "DELETE" });
     router.push("/staff");
   }
@@ -38,8 +43,15 @@ export default function StaffDetailPage() {
   if (loading) return <div className="text-center py-20 text-muted-foreground">Loading...</div>;
   if (!data) return null;
 
+  const tabs: { key: Tab; label: string }[] = [
+    { key: "overview", label: "Overview" },
+    { key: "attendance", label: "Attendance" },
+    { key: "leave", label: "Leave" },
+  ];
+
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-6">
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      {/* Header */}
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" onClick={() => router.push("/staff")}>
           ← Back
@@ -56,32 +68,59 @@ export default function StaffDetailPage() {
               <Badge variant="secondary">Inactive</Badge>
             )}
           </div>
-          <p className="text-muted-foreground mt-1">
-            {ROLE_LABEL[data.role]}
-          </p>
+          <p className="text-muted-foreground mt-1">{ROLE_LABEL[data.role]}</p>
         </div>
         <div className="flex gap-2">
           <StaffForm staff={data} onSuccess={fetchData} />
-          <Button variant="destructive" size="sm" onClick={handleDelete}>
-            Delete
-          </Button>
+          <Button variant="destructive" size="sm" onClick={handleDelete}>Delete</Button>
         </div>
       </div>
 
-      <div className="border rounded-xl divide-y">
-        <div className="flex items-center justify-between px-4 py-3">
-          <span className="text-sm text-muted-foreground">Phone</span>
-          <span className="text-sm font-medium">{data.phone ?? "—"}</span>
-        </div>
-        <div className="flex items-center justify-between px-4 py-3">
-          <span className="text-sm text-muted-foreground">Join Date</span>
-          <span className="text-sm font-medium">{new Date(data.joinedAt).toLocaleDateString()}</span>
-        </div>
-        <div className="flex items-center justify-between px-4 py-3">
-          <span className="text-sm text-muted-foreground">Added At</span>
-          <span className="text-sm font-medium">{new Date(data.createdAt).toLocaleString()}</span>
-        </div>
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-border">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              tab === t.key
+                ? "border-amber-700 text-amber-800"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
+
+      {/* Tab Content */}
+      {tab === "overview" && (
+        <div className="border rounded-xl divide-y">
+          <div className="flex items-center justify-between px-4 py-3">
+            <span className="text-sm text-muted-foreground">Phone</span>
+            <span className="text-sm font-medium">{data.phone ?? "—"}</span>
+          </div>
+          <div className="flex items-center justify-between px-4 py-3">
+            <span className="text-sm text-muted-foreground">Join Date</span>
+            <span className="text-sm font-medium">{new Date(data.joinedAt).toLocaleDateString()}</span>
+          </div>
+          <div className="flex items-center justify-between px-4 py-3">
+            <span className="text-sm text-muted-foreground">Role</span>
+            <span className="text-sm font-medium">{ROLE_LABEL[data.role]}</span>
+          </div>
+          <div className="flex items-center justify-between px-4 py-3">
+            <span className="text-sm text-muted-foreground">Status</span>
+            <span className="text-sm font-medium">{data.status === "ACTIVE" ? "Active" : "Inactive"}</span>
+          </div>
+          <div className="flex items-center justify-between px-4 py-3">
+            <span className="text-sm text-muted-foreground">Added</span>
+            <span className="text-sm font-medium">{new Date(data.createdAt).toLocaleString()}</span>
+          </div>
+        </div>
+      )}
+
+      {tab === "attendance" && <AttendanceTab staffId={id} />}
+      {tab === "leave" && <LeaveTab staffId={id} />}
     </div>
   );
 }

@@ -34,14 +34,63 @@ enum StockType {
 }
 
 model Staff {
+  id            String         @id @default(cuid())
+  name          String
+  role          StaffRole
+  status        StaffStatus    @default(ACTIVE)
+  phone         String?
+  joinedAt      DateTime       @default(now())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  attendance    Attendance[]
+  leaveRequests LeaveRequest[]
+}
+
+model Attendance {
+  id        String           @id @default(cuid())
+  staffId   String
+  staff     Staff            @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  date      DateTime         @db.Date
+  timeIn    DateTime?
+  timeOut   DateTime?
+  status    AttendanceStatus @default(PRESENT)
+  note      String?
+  createdAt DateTime         @default(now())
+
+  @@unique([staffId, date])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+}
+
+model LeaveRequest {
   id        String      @id @default(cuid())
-  name      String
-  role      StaffRole
-  status    StaffStatus @default(ACTIVE)
-  phone     String?
-  joinedAt  DateTime    @default(now())
+  staffId   String
+  staff     Staff       @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  type      LeaveType
+  startDate DateTime    @db.Date
+  endDate   DateTime    @db.Date
+  reason    String?
+  status    LeaveStatus @default(PENDING)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
+}
+
+enum LeaveType {
+  SICK
+  ANNUAL
+  EMERGENCY
+  OTHER
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum StaffRole {

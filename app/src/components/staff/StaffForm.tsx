@@ -11,13 +11,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type { Staff } from "@/lib/types";
 
 type Props = {
@@ -25,9 +18,13 @@ type Props = {
   onSuccess: () => void;
 };
 
+const nativeSelect =
+  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50";
+
 export function StaffForm({ staff, onSuccess }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
     name: staff?.name ?? "",
     role: staff?.role ?? "BARISTA",
@@ -43,17 +40,25 @@ export function StaffForm({ staff, onSuccess }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    setError("");
 
     const url = isEdit ? `/api/staff/${staff.id}` : "/api/staff";
     const method = isEdit ? "PUT" : "POST";
 
-    await fetch(url, {
+    const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
 
     setLoading(false);
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Something went wrong. Please try again.");
+      return;
+    }
+
     setOpen(false);
     onSuccess();
   }
@@ -81,29 +86,27 @@ export function StaffForm({ staff, onSuccess }: Props) {
           </div>
           <div className="space-y-1">
             <Label>Role</Label>
-            <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v as typeof form.role })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="OWNER">Owner</SelectItem>
-                <SelectItem value="MANAGER">Manager</SelectItem>
-                <SelectItem value="BARISTA">Barista</SelectItem>
-              </SelectContent>
-            </Select>
+            <select
+              className={nativeSelect}
+              value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value as typeof form.role })}
+            >
+              <option value="OWNER">Owner</option>
+              <option value="MANAGER">Manager</option>
+              <option value="BARISTA">Barista</option>
+            </select>
           </div>
           {isEdit && (
             <div className="space-y-1">
               <Label>Status</Label>
-              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as typeof form.status })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ACTIVE">Active</SelectItem>
-                  <SelectItem value="INACTIVE">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
+              <select
+                className={nativeSelect}
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value as typeof form.status })}
+              >
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+              </select>
             </div>
           )}
           <div className="space-y-1">
@@ -122,6 +125,7 @@ export function StaffForm({ staff, onSuccess }: Props) {
               onChange={(e) => setForm({ ...form, joinedAt: e.target.value })}
             />
           </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
