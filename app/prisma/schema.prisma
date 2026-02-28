@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Ingredient {
+  id            String     @id @default(cuid())
+  name          String
+  unit          String
+  currentStock  Float      @default(0)
+  lowStockAlert Float      @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  stockLogs     StockLog[]
+}
+
+model StockLog {
+  id           String     @id @default(cuid())
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  type         StockType
+  quantity     Float
+  note         String?
+  createdAt    DateTime   @default(now())
+}
+
+enum StockType {
+  STOCK_IN
+  STOCK_OUT
+}
