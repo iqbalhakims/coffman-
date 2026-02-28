@@ -29,9 +29,9 @@ const features = [
   {
     icon: Users,
     title: "Staff",
-    description: "Schedule shifts, track attendance, and manage payroll.",
-    href: "#",
-    available: false,
+    description: "Manage your team — roles, contact info, and status.",
+    href: "/staff",
+    available: true,
   },
   {
     icon: Truck,
@@ -43,9 +43,9 @@ const features = [
   {
     icon: BarChart3,
     title: "Reports",
-    description: "View sales performance, COGS, and operational cost breakdowns.",
-    href: "#",
-    available: false,
+    description: "View inventory overview, stock movement, and staff summary.",
+    href: "/reports",
+    available: true,
   },
   {
     icon: ShieldCheck,
@@ -58,7 +58,7 @@ const features = [
 
 const stats = [
   { label: "Modules Planned", value: "6" },
-  { label: "Live Module", value: "1" },
+  { label: "Live Modules", value: "3" },
   { label: "Built with", value: "Next.js" },
 ];
 
