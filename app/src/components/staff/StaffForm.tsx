@@ -27,6 +27,8 @@ export function StaffForm({ staff, onSuccess }: Props) {
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     name: staff?.name ?? "",
+    email: (staff as (typeof staff & { email?: string }))?.email ?? "",
+    password: "",
     role: staff?.role ?? "BARISTA",
     status: staff?.status ?? "ACTIVE",
     phone: staff?.phone ?? "",
@@ -82,6 +84,26 @@ export function StaffForm({ staff, onSuccess }: Props) {
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="e.g. Budi Santoso"
               required
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Email</Label>
+            <Input
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              placeholder="e.g. budi@coffman.com"
+              required={!isEdit}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>{isEdit ? "New Password" : "Password"}</Label>
+            <Input
+              type="password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              placeholder={isEdit ? "Leave blank to keep current" : "Set a password"}
+              required={!isEdit}
             />
           </div>
           <div className="space-y-1">

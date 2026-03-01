@@ -1,8 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Coffee, Package, Users, BarChart3, Home, UtensilsCrossed, ShoppingCart } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Coffee, Package, Users, BarChart3, Home, UtensilsCrossed, ShoppingCart, LogOut } from "lucide-react";
+import type { StaffRole } from "@/generated/prisma/client";
+
+type SessionUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: StaffRole;
+};
+
+const ROLE_LABEL: Record<StaffRole, string> = {
+  OWNER: "Owner",
+  MANAGER: "Manager",
+  BARISTA: "Barista",
+};
 
 const nav = [
   { label: "Menu", href: "/menu", icon: UtensilsCrossed },
@@ -14,6 +29,21 @@ const nav = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState<SessionUser | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => setUser(data))
+      .catch(() => {});
+  }, []);
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -46,8 +76,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {/* Back to home */}
-        <div className="p-3 border-t border-border">
+        {/* Bottom: user info + logout */}
+        <div className="p-3 border-t border-border space-y-1">
           <Link
             href="/"
             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
@@ -55,6 +85,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Home className="w-4 h-4" />
             Home
           </Link>
+          {user && (
+            <div className="px-3 py-2 rounded-lg bg-muted/50">
+              <p className="text-xs font-medium text-foreground truncate">{user.name}</p>
+              <p className="text-xs text-muted-foreground">{ROLE_LABEL[user.role]}</p>
+            </div>
+          )}
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign out
+          </button>
         </div>
       </aside>
 
