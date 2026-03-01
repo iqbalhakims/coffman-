@@ -47,6 +47,7 @@ model Staff {
   updatedAt     DateTime       @updatedAt
   attendance    Attendance[]
   leaveRequests LeaveRequest[]
+  subscription  Subscription?
 }
 
 model Attendance {
@@ -158,4 +159,30 @@ model SaleItem {
   quantity   Int
   price      Float
   subtotal   Float
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING_PAYMENT
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  staffId            String             @unique
+  staff              Staff              @relation(fields: [staffId], references: [id])
+  billingCycle       BillingCycle
+  status             SubscriptionStatus @default(PENDING_PAYMENT)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  xenditInvoiceId    String?
+  xenditPaymentUrl   String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 }

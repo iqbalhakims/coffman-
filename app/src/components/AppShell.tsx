@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Coffee, Package, Users, BarChart3, Home, UtensilsCrossed, ShoppingCart, LogOut } from "lucide-react";
+import { Coffee, Package, Users, BarChart3, Home, UtensilsCrossed, ShoppingCart, LogOut, AlertTriangle } from "lucide-react";
 import type { StaffRole } from "@/generated/prisma/client";
 
 type SessionUser = {
@@ -12,6 +12,8 @@ type SessionUser = {
   email: string;
   role: StaffRole;
 };
+
+type SubStatus = "ACTIVE" | "EXPIRED" | "CANCELLED" | "PENDING_PAYMENT" | null;
 
 const ROLE_LABEL: Record<StaffRole, string> = {
   OWNER: "Owner",
@@ -31,12 +33,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<SessionUser | null>(null);
+  const [subStatus, setSubStatus] = useState<SubStatus>(undefined as unknown as SubStatus);
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.ok ? r.json() : null)
       .then((data) => setUser(data))
       .catch(() => {});
+
+    fetch("/api/subscriptions/status")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => setSubStatus(data?.status ?? null))
+      .catch(() => setSubStatus(null));
   }, []);
 
   async function handleLogout() {
@@ -102,8 +110,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        {children}
+      <main className="flex-1 overflow-auto flex flex-col">
+        {user?.role === "OWNER" && subStatus !== "ACTIVE" && subStatus !== undefined && (
+          <div className="bg-amber-50 border-b border-amber-200 px-6 py-2.5 flex items-center justify-between gap-4 shrink-0">
+            <div className="flex items-center gap-2 text-sm text-amber-800">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              {subStatus === null
+                ? "You don't have an active subscription."
+                : subStatus === "PENDING_PAYMENT"
+                ? "Your payment is pending."
+                : "Your subscription has expired."}
+            </div>
+            <Link
+              href="/#pricing"
+              className="text-xs font-medium bg-amber-700 hover:bg-amber-800 text-white px-3 py-1 rounded-md transition-colors shrink-0"
+            >
+              Subscribe now
+            </Link>
+          </div>
+        )}
+        <div className="flex-1">{children}</div>
       </main>
     </div>
   );

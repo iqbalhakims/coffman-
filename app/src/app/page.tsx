@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import {
   Package,
   UtensilsCrossed,
@@ -9,6 +12,7 @@ import {
   ArrowRight,
   TrendingUp,
   ShieldCheck,
+  Check,
 } from "lucide-react";
 
 const features = [
@@ -69,6 +73,113 @@ const stats = [
   { label: "Built with", value: "Next.js" },
 ];
 
+const PLAN_FEATURES = [
+  "Inventory & stock tracking",
+  "Menu & recipe management",
+  "Sales recording & POS",
+  "Staff management",
+  "Analytics & reports",
+  "Role-based access control",
+];
+
+function PricingSection() {
+  const [annual, setAnnual] = useState(true);
+
+  const monthly = { price: 90, label: "RM 90", cycle: "/ month", href: "/login?plan=MONTHLY" };
+  const annualPlan = { price: 79, label: "RM 79", cycle: "/ month, billed annually", href: "/login?plan=ANNUAL" };
+  const active = annual ? annualPlan : monthly;
+  const other = annual ? monthly : annualPlan;
+
+  return (
+    <section id="pricing" className="max-w-6xl mx-auto px-6 pb-24">
+      <div className="mb-10 text-center">
+        <h2 className="text-2xl font-bold text-foreground">Simple, transparent pricing</h2>
+        <p className="text-muted-foreground mt-1">One plan, all features included.</p>
+
+        {/* Billing toggle */}
+        <div className="inline-flex items-center gap-1 mt-6 bg-muted rounded-lg p-1">
+          <button
+            onClick={() => setAnnual(false)}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              !annual ? "bg-background shadow text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            Monthly
+          </button>
+          <button
+            onClick={() => setAnnual(true)}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              annual ? "bg-background shadow text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            Annual
+            <span className="ml-1.5 text-[10px] font-semibold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full">
+              Save 12%
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div className="max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Highlighted / active plan */}
+        <div className="border-2 border-amber-400 rounded-xl p-6 bg-amber-50 relative flex flex-col">
+          {annual && (
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-[11px] font-semibold bg-amber-700 text-white px-3 py-0.5 rounded-full">
+              Best value
+            </div>
+          )}
+          <div className="text-sm font-medium text-amber-800 mb-2">
+            {annual ? "Annual" : "Monthly"}
+          </div>
+          <div className="flex items-end gap-1 mb-1">
+            <span className="text-4xl font-bold text-foreground">{active.label}</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-6">{active.cycle}</p>
+          <ul className="space-y-2 mb-8 flex-1">
+            {PLAN_FEATURES.map((f) => (
+              <li key={f} className="flex items-center gap-2 text-sm text-foreground">
+                <Check className="w-4 h-4 text-amber-700 shrink-0" />
+                {f}
+              </li>
+            ))}
+          </ul>
+          <Link
+            href={active.href}
+            className="block text-center bg-amber-700 hover:bg-amber-800 text-white px-4 py-2.5 rounded-md text-sm font-medium transition-colors"
+          >
+            Get Started
+          </Link>
+        </div>
+
+        {/* Other plan */}
+        <div className="border border-border rounded-xl p-6 bg-card flex flex-col">
+          <div className="text-sm font-medium text-muted-foreground mb-2">
+            {annual ? "Monthly" : "Annual"}
+          </div>
+          <div className="flex items-end gap-1 mb-1">
+            <span className="text-4xl font-bold text-foreground">{other.label}</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-6">{other.cycle}</p>
+          <ul className="space-y-2 mb-8 flex-1">
+            {PLAN_FEATURES.map((f) => (
+              <li key={f} className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Check className="w-4 h-4 text-muted-foreground shrink-0" />
+                {f}
+              </li>
+            ))}
+          </ul>
+          <Link
+            href={other.href}
+            className="block text-center border border-border hover:bg-muted px-4 py-2.5 rounded-md text-sm font-medium transition-colors"
+          >
+            Get Started
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
@@ -79,12 +190,17 @@ export default function Home() {
             <Coffee className="w-5 h-5 text-amber-700" />
             <span>Coffman</span>
           </div>
-          <Link
-            href="/inventory"
-            className="flex items-center gap-1.5 text-sm font-medium bg-amber-700 hover:bg-amber-800 text-white px-4 py-1.5 rounded-md transition-colors"
-          >
-            Open App <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+          <div className="flex items-center gap-3">
+            <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Pricing
+            </a>
+            <Link
+              href="/inventory"
+              className="flex items-center gap-1.5 text-sm font-medium bg-amber-700 hover:bg-amber-800 text-white px-4 py-1.5 rounded-md transition-colors"
+            >
+              Open App <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -191,6 +307,9 @@ export default function Home() {
           })}
         </div>
       </section>
+
+      {/* Pricing */}
+      <PricingSection />
 
       {/* Footer */}
       <footer className="border-t border-border py-6">
