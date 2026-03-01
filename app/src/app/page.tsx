@@ -22,9 +22,9 @@ const features = [
   {
     icon: UtensilsCrossed,
     title: "Menu",
-    description: "Manage menu items, variants, and recipes linked to your inventory.",
-    href: "#",
-    available: false,
+    description: "Manage menu items, set prices, and link recipes to ingredients.",
+    href: "/menu",
+    available: true,
   },
   {
     icon: Users,
@@ -41,9 +41,16 @@ const features = [
     available: false,
   },
   {
+    icon: TrendingUp,
+    title: "Sales",
+    description: "Record daily sales, track monthly revenue, and see top products — no Excel needed.",
+    href: "/sales",
+    available: true,
+  },
+  {
     icon: BarChart3,
     title: "Reports",
-    description: "View inventory overview, stock movement, and staff summary.",
+    description: "Monthly revenue, top products, payment breakdown, inventory, and staff summary.",
     href: "/reports",
     available: true,
   },
@@ -58,7 +65,7 @@ const features = [
 
 const stats = [
   { label: "Modules Planned", value: "6" },
-  { label: "Live Modules", value: "3" },
+  { label: "Live Modules", value: "5" },
   { label: "Built with", value: "Next.js" },
 ];
 

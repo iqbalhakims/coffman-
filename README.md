@@ -95,14 +95,14 @@ coffman/
 
 ## Roadmap
 
-- [ ] Project scaffolding and DB schema design
+- [x] Project scaffolding and DB schema design
 - [ ] Auth system with role-based access
-- [ ] Menu & recipe management
-- [ ] Inventory tracking with low-stock alerts
+- [x] Inventory tracking with low-stock alerts
+- [x] Staff scheduling and attendance
+- [ ] Menu & recipe management (API done, UI pending)
 - [ ] Supplier & purchase order management
-- [ ] Staff scheduling and attendance
 - [ ] Expense tracking
-- [ ] Reports and analytics dashboard
+- [ ] Reports and analytics dashboard (basic route exists, incomplete)
 
 ---
 

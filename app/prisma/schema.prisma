@@ -8,14 +8,15 @@ datasource db {
 }
 
 model Ingredient {
-  id            String     @id @default(cuid())
+  id            String       @id @default(cuid())
   name          String
   unit          String
-  currentStock  Float      @default(0)
-  lowStockAlert Float      @default(0)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  currentStock  Float        @default(0)
+  lowStockAlert Float        @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
   stockLogs     StockLog[]
+  recipeItems   RecipeItem[]
 }
 
 model StockLog {
@@ -102,4 +103,57 @@ enum StaffRole {
 enum StaffStatus {
   ACTIVE
   INACTIVE
+}
+
+model MenuItem {
+  id        String       @id @default(cuid())
+  name      String
+  category  String
+  price     Float
+  status    MenuStatus   @default(ACTIVE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  saleItems SaleItem[]
+  recipe    RecipeItem[]
+}
+
+enum MenuStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model RecipeItem {
+  id           String     @id @default(cuid())
+  menuItemId   String
+  menuItem     MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+  quantity     Float
+}
+
+model Sale {
+  id            String        @id @default(cuid())
+  total         Float
+  paymentMethod PaymentMethod
+  note          String?
+  soldAt        DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  items         SaleItem[]
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  EWALLET
+}
+
+model SaleItem {
+  id         String   @id @default(cuid())
+  saleId     String
+  sale       Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity   Int
+  price      Float
+  subtotal   Float
 }
