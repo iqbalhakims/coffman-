@@ -41,17 +41,23 @@ export const POST = withAuth(async (req: NextRequest, _ctx, session: SessionPayl
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const externalId = `coffman-${session.id}-${Date.now()}`;
 
-  const invoice = await createXenditInvoice({
-    externalId,
-    amount: PRICES[billingCycle],
-    payerEmail: staff.email,
-    description:
-      billingCycle === "MONTHLY"
-        ? "Coffman Monthly Plan — RM 90/month"
-        : "Coffman Annual Plan — RM 948/year (RM 79/month)",
-    successRedirectUrl: `${appUrl}/inventory?subscribed=1`,
-    failureRedirectUrl: `${appUrl}/?payment=failed`,
-  });
+  let invoice: { id: string; invoice_url: string };
+  try {
+    invoice = await createXenditInvoice({
+      externalId,
+      amount: PRICES[billingCycle],
+      payerEmail: staff.email,
+      description:
+        billingCycle === "MONTHLY"
+          ? "Coffman Monthly Plan — RM 90/month"
+          : "Coffman Annual Plan — RM 948/year (RM 79/month)",
+      successRedirectUrl: `${appUrl}/inventory?subscribed=1`,
+      failureRedirectUrl: `${appUrl}/?payment=failed`,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Payment provider error";
+    return NextResponse.json({ error: message }, { status: 502 });
+  }
 
   await prisma.subscription.upsert({
     where: { staffId: session.id },

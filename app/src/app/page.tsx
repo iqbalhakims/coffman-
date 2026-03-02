@@ -85,8 +85,8 @@ const PLAN_FEATURES = [
 function PricingSection() {
   const [annual, setAnnual] = useState(true);
 
-  const monthly = { price: 90, label: "RM 90", cycle: "/ month", href: "/login?plan=MONTHLY" };
-  const annualPlan = { price: 79, label: "RM 79", cycle: "/ month, billed annually", href: "/login?plan=ANNUAL" };
+  const monthly = { price: 90, label: "RM 90", cycle: "/ month", href: "/subscribe?plan=MONTHLY" };
+  const annualPlan = { price: 79, label: "RM 79", cycle: "/ month, billed annually", href: "/subscribe?plan=ANNUAL" };
   const active = annual ? annualPlan : monthly;
   const other = annual ? monthly : annualPlan;
 
