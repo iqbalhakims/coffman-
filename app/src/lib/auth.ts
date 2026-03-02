@@ -10,6 +10,7 @@ export type SessionPayload = {
   name: string;
   email: string;
   role: StaffRole;
+  shopId: string;
 };
 
 export async function signToken(payload: SessionPayload): Promise<string> {

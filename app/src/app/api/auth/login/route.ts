@@ -26,6 +26,7 @@ export async function POST(req: Request) {
     name: staff.name,
     email: staff.email,
     role: staff.role,
+    shopId: staff.shopId,
   });
 
   const res = NextResponse.json({
@@ -33,6 +34,7 @@ export async function POST(req: Request) {
     name: staff.name,
     email: staff.email,
     role: staff.role,
+    shopId: staff.shopId,
   });
 
   res.cookies.set(sessionCookieOptions(token));

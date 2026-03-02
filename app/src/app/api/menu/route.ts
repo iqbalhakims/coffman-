@@ -1,8 +1,11 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextResponse, type NextRequest } from "next/server";
+import { withAuth } from "@/lib/withAuth";
+import prisma from "@/lib/prisma";
+import type { SessionPayload } from "@/lib/auth";
 
-export async function GET() {
+export const GET = withAuth(async (_req: NextRequest, _ctx, session: SessionPayload) => {
   const items = await prisma.menuItem.findMany({
+    where: { shopId: session.shopId },
     orderBy: { name: "asc" },
     include: {
       recipe: {
@@ -11,9 +14,9 @@ export async function GET() {
     },
   });
   return NextResponse.json(items);
-}
+});
 
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: NextRequest, _ctx, session: SessionPayload) => {
   const body = await req.json();
   const { name, category, price, status, recipe } = body;
 
@@ -23,6 +26,7 @@ export async function POST(req: Request) {
 
   const item = await prisma.menuItem.create({
     data: {
+      shopId: session.shopId,
       name,
       category,
       price: parseFloat(price),
@@ -42,4 +46,4 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json(item, { status: 201 });
-}
+});

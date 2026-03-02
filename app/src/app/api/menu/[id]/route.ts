@@ -1,20 +1,25 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextResponse, type NextRequest } from "next/server";
+import { withAuth } from "@/lib/withAuth";
+import prisma from "@/lib/prisma";
+import type { SessionPayload } from "@/lib/auth";
 
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const item = await prisma.menuItem.findUnique({
-    where: { id },
+export const GET = withAuth(async (_req: NextRequest, ctx, session: SessionPayload) => {
+  const { id } = await ctx.params;
+  const item = await prisma.menuItem.findFirst({
+    where: { id, shopId: session.shopId },
     include: { recipe: { include: { ingredient: true } } },
   });
   if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(item);
-}
+});
 
-export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export const PUT = withAuth(async (req: NextRequest, ctx, session: SessionPayload) => {
+  const { id } = await ctx.params;
   const body = await req.json();
   const { name, category, price, status, recipe } = body;
+
+  const existing = await prisma.menuItem.findFirst({ where: { id, shopId: session.shopId } });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const item = await prisma.menuItem.update({
     where: { id },
@@ -37,10 +42,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   });
 
   return NextResponse.json(item);
-}
+});
 
-export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export const DELETE = withAuth(async (_req: NextRequest, ctx, session: SessionPayload) => {
+  const { id } = await ctx.params;
+  const existing = await prisma.menuItem.findFirst({ where: { id, shopId: session.shopId } });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
   await prisma.menuItem.delete({ where: { id } });
   return NextResponse.json({ success: true });
-}
+});

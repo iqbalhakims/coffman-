@@ -1,7 +1,9 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextResponse, type NextRequest } from "next/server";
+import { withAuth } from "@/lib/withAuth";
+import prisma from "@/lib/prisma";
+import type { SessionPayload } from "@/lib/auth";
 
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: NextRequest, _ctx, session: SessionPayload) => {
   const body = await req.json();
   const { ingredientId, type, quantity, note } = body;
 
@@ -16,8 +18,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid type" }, { status: 400 });
   }
 
-  const ingredient = await prisma.ingredient.findUnique({
-    where: { id: ingredientId },
+  const ingredient = await prisma.ingredient.findFirst({
+    where: { id: ingredientId, shopId: session.shopId },
   });
 
   if (!ingredient) {
@@ -45,4 +47,4 @@ export async function POST(req: Request) {
   ]);
 
   return NextResponse.json(log, { status: 201 });
-}
+});

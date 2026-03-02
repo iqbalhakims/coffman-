@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextResponse, type NextRequest } from "next/server";
+import { withAuth } from "@/lib/withAuth";
+import prisma from "@/lib/prisma";
+import type { SessionPayload } from "@/lib/auth";
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const month = searchParams.get("month"); // format: "2026-03"
+export const GET = withAuth(async (req: NextRequest, _ctx, session: SessionPayload) => {
+  const month = req.nextUrl.searchParams.get("month"); // format: "2026-03"
 
   let dateFilter = {};
   if (month) {
@@ -17,7 +18,7 @@ export async function GET(req: Request) {
   }
 
   const sales = await prisma.sale.findMany({
-    where: dateFilter,
+    where: { shopId: session.shopId, ...dateFilter },
     orderBy: { soldAt: "desc" },
     include: {
       items: {
@@ -27,9 +28,9 @@ export async function GET(req: Request) {
   });
 
   return NextResponse.json(sales);
-}
+});
 
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: NextRequest, _ctx, session: SessionPayload) => {
   const body = await req.json();
   const { paymentMethod, note, items } = body;
 
@@ -37,10 +38,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "paymentMethod and items are required" }, { status: 400 });
   }
 
-  // Load menu items with their recipes
+  // Load menu items (scoped to this shop) with their recipes
   const menuItemIds = items.map((i: { menuItemId: string }) => i.menuItemId);
   const menuItems = await prisma.menuItem.findMany({
-    where: { id: { in: menuItemIds } },
+    where: { id: { in: menuItemIds }, shopId: session.shopId },
     include: { recipe: true },
   });
 
@@ -72,7 +73,7 @@ export async function POST(req: Request) {
   // Validate stock levels before proceeding
   if (stockDeductions.size > 0) {
     const ingredients = await prisma.ingredient.findMany({
-      where: { id: { in: Array.from(stockDeductions.keys()) } },
+      where: { id: { in: Array.from(stockDeductions.keys()) }, shopId: session.shopId },
     });
     for (const ingredient of ingredients) {
       const needed = stockDeductions.get(ingredient.id) ?? 0;
@@ -89,6 +90,7 @@ export async function POST(req: Request) {
   const sale = await prisma.$transaction(async (tx) => {
     const newSale = await tx.sale.create({
       data: {
+        shopId: session.shopId,
         total,
         paymentMethod,
         note: note ?? null,
@@ -129,4 +131,4 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json(sale, { status: 201 });
-}
+});

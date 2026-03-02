@@ -1,23 +1,31 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextResponse, type NextRequest } from "next/server";
+import { withAuth } from "@/lib/withAuth";
+import prisma from "@/lib/prisma";
+import type { SessionPayload } from "@/lib/auth";
 
-// GET all attendance for a staff member
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export const GET = withAuth(async (_req: NextRequest, ctx, session: SessionPayload) => {
+  const { id } = await ctx.params;
+
+  // Ensure staff belongs to this shop
+  const staff = await prisma.staff.findFirst({ where: { id, shopId: session.shopId } });
+  if (!staff) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
   const records = await prisma.attendance.findMany({
     where: { staffId: id },
     orderBy: { date: "desc" },
   });
   return NextResponse.json(records);
-}
+});
 
-// POST clock-in (creates today's attendance record)
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export const POST = withAuth(async (req: NextRequest, ctx, session: SessionPayload) => {
+  const { id } = await ctx.params;
   const body = await req.json();
   const { status, note, date } = body;
 
-  // Normalize to start of day in UTC
+  // Ensure staff belongs to this shop
+  const staff = await prisma.staff.findFirst({ where: { id, shopId: session.shopId } });
+  if (!staff) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
   const today = date ? new Date(date) : new Date();
   today.setUTCHours(0, 0, 0, 0);
 
@@ -40,4 +48,4 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   });
 
   return NextResponse.json(record, { status: 201 });
-}
+});

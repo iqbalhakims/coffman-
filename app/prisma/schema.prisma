@@ -7,35 +7,46 @@ datasource db {
   provider = "postgresql"
 }
 
-model Ingredient {
-  id            String       @id @default(cuid())
-  name          String
-  unit          String
-  currentStock  Float        @default(0)
-  lowStockAlert Float        @default(0)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  stockLogs     StockLog[]
-  recipeItems   RecipeItem[]
+// ─── Shop (tenant root) ───────────────────────────────────────────────────────
+
+model Shop {
+  id           String        @id @default(cuid())
+  name         String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  staff        Staff[]
+  subscription Subscription?
+  ingredients  Ingredient[]
+  menuItems    MenuItem[]
+  sales        Sale[]
 }
 
-model StockLog {
-  id           String     @id @default(cuid())
-  ingredientId String
-  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
-  type         StockType
-  quantity     Float
-  note         String?
-  createdAt    DateTime   @default(now())
+// ─── Pre-payment registration ─────────────────────────────────────────────────
+
+enum PendingStatus {
+  AWAITING_PAYMENT
+  PAID
+  COMPLETED
 }
 
-enum StockType {
-  STOCK_IN
-  STOCK_OUT
+model PendingRegistration {
+  id               String        @id @default(cuid())
+  token            String        @unique
+  email            String
+  billingCycle     BillingCycle
+  status           PendingStatus @default(AWAITING_PAYMENT)
+  xenditInvoiceId  String?
+  xenditPaymentUrl String?
+  createdAt        DateTime      @default(now())
+  expiresAt        DateTime
 }
+
+// ─── Staff ────────────────────────────────────────────────────────────────────
 
 model Staff {
   id            String         @id @default(cuid())
+  shopId        String
+  shop          Shop           @relation(fields: [shopId], references: [id])
   name          String
   email         String         @unique
   password      String
@@ -47,8 +58,20 @@ model Staff {
   updatedAt     DateTime       @updatedAt
   attendance    Attendance[]
   leaveRequests LeaveRequest[]
-  subscription  Subscription?
 }
+
+enum StaffRole {
+  OWNER
+  MANAGER
+  BARISTA
+}
+
+enum StaffStatus {
+  ACTIVE
+  INACTIVE
+}
+
+// ─── Attendance & Leave ───────────────────────────────────────────────────────
 
 model Attendance {
   id        String           @id @default(cuid())
@@ -97,19 +120,43 @@ enum LeaveStatus {
   REJECTED
 }
 
-enum StaffRole {
-  OWNER
-  MANAGER
-  BARISTA
+// ─── Inventory ────────────────────────────────────────────────────────────────
+
+model Ingredient {
+  id            String       @id @default(cuid())
+  shopId        String
+  shop          Shop         @relation(fields: [shopId], references: [id])
+  name          String
+  unit          String
+  currentStock  Float        @default(0)
+  lowStockAlert Float        @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  stockLogs     StockLog[]
+  recipeItems   RecipeItem[]
 }
 
-enum StaffStatus {
-  ACTIVE
-  INACTIVE
+model StockLog {
+  id           String     @id @default(cuid())
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  type         StockType
+  quantity     Float
+  note         String?
+  createdAt    DateTime   @default(now())
 }
+
+enum StockType {
+  STOCK_IN
+  STOCK_OUT
+}
+
+// ─── Menu ─────────────────────────────────────────────────────────────────────
 
 model MenuItem {
   id        String       @id @default(cuid())
+  shopId    String
+  shop      Shop         @relation(fields: [shopId], references: [id])
   name      String
   category  String
   price     Float
@@ -134,8 +181,12 @@ model RecipeItem {
   quantity     Float
 }
 
+// ─── Sales ────────────────────────────────────────────────────────────────────
+
 model Sale {
   id            String        @id @default(cuid())
+  shopId        String
+  shop          Shop          @relation(fields: [shopId], references: [id])
   total         Float
   paymentMethod PaymentMethod
   note          String?
@@ -161,6 +212,8 @@ model SaleItem {
   subtotal   Float
 }
 
+// ─── Subscription ─────────────────────────────────────────────────────────────
+
 enum BillingCycle {
   MONTHLY
   ANNUAL
@@ -175,8 +228,8 @@ enum SubscriptionStatus {
 
 model Subscription {
   id                 String             @id @default(cuid())
-  staffId            String             @unique
-  staff              Staff              @relation(fields: [staffId], references: [id])
+  shopId             String             @unique
+  shop               Shop               @relation(fields: [shopId], references: [id])
   billingCycle       BillingCycle
   status             SubscriptionStatus @default(PENDING_PAYMENT)
   currentPeriodStart DateTime

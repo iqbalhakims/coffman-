@@ -10,24 +10,49 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  if (!body || !body.id || !body.status) {
+  if (!body || !body.external_id || !body.status) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
+  const externalId: string = body.external_id;
   const xenditInvoiceId: string = body.id;
   const xenditStatus: string = body.status;
 
+  // ── Pre-payment registration (new shop onboarding) ───────────────────────
+  if (externalId.startsWith("coffman-pending-")) {
+    const token = externalId.replace("coffman-pending-", "");
+
+    const pending = await prisma.pendingRegistration.findUnique({ where: { token } });
+    if (!pending || pending.status === "COMPLETED") {
+      return NextResponse.json({ received: true });
+    }
+
+    if (xenditStatus === "PAID") {
+      await prisma.pendingRegistration.update({
+        where: { token },
+        data: { status: "PAID" },
+      });
+    } else if (xenditStatus === "EXPIRED") {
+      // Mark as completed so the token can no longer be used
+      await prisma.pendingRegistration.update({
+        where: { token },
+        data: { status: "COMPLETED" },
+      });
+    }
+
+    return NextResponse.json({ received: true });
+  }
+
+  // ── Subscription renewal (existing shop) ─────────────────────────────────
   const sub = await prisma.subscription.findFirst({
     where: { xenditInvoiceId },
   });
 
   if (!sub) {
-    // Not found — not our invoice, return 200 to avoid Xendit retries
     return NextResponse.json({ received: true });
   }
 
   if (xenditStatus === "PAID") {
-    // Extend period from now
     const now = new Date();
     const periodEnd = new Date(now);
     if (sub.billingCycle === "MONTHLY") {

@@ -5,7 +5,7 @@ import type { SessionPayload } from "@/lib/auth";
 
 export const GET = withAuth(async (_req: NextRequest, _ctx, session: SessionPayload) => {
   const sub = await prisma.subscription.findUnique({
-    where: { staffId: session.id },
+    where: { shopId: session.shopId },
     select: {
       status: true,
       billingCycle: true,
@@ -21,7 +21,7 @@ export const GET = withAuth(async (_req: NextRequest, _ctx, session: SessionPayl
   // Auto-expire if period has passed
   if (sub.status === "ACTIVE" && sub.currentPeriodEnd < new Date()) {
     await prisma.subscription.update({
-      where: { staffId: session.id },
+      where: { shopId: session.shopId },
       data: { status: "EXPIRED" },
     });
     return NextResponse.json({

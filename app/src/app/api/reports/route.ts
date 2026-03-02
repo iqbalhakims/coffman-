@@ -1,9 +1,11 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextResponse, type NextRequest } from "next/server";
+import { withAuth } from "@/lib/withAuth";
+import prisma from "@/lib/prisma";
+import type { SessionPayload } from "@/lib/auth";
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const month = searchParams.get("month"); // format: "2026-03"
+export const GET = withAuth(async (req: NextRequest, _ctx, session: SessionPayload) => {
+  const month = req.nextUrl.searchParams.get("month"); // format: "2026-03"
+  const { shopId } = session;
 
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -22,15 +24,18 @@ export async function GET(req: Request) {
   }
 
   const [ingredients, stockLogs, staff, monthlySales] = await Promise.all([
-    prisma.ingredient.findMany({ orderBy: { name: "asc" } }),
+    prisma.ingredient.findMany({ where: { shopId }, orderBy: { name: "asc" } }),
     prisma.stockLog.findMany({
-      where: { createdAt: { gte: thirtyDaysAgo } },
+      where: {
+        createdAt: { gte: thirtyDaysAgo },
+        ingredient: { shopId },
+      },
       include: { ingredient: { select: { name: true, unit: true } } },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.staff.findMany({ orderBy: { name: "asc" } }),
+    prisma.staff.findMany({ where: { shopId }, orderBy: { name: "asc" } }),
     prisma.sale.findMany({
-      where: { soldAt: { gte: monthStart, lt: monthEnd } },
+      where: { shopId, soldAt: { gte: monthStart, lt: monthEnd } },
       include: {
         items: { include: { menuItem: true } },
       },
@@ -119,4 +124,4 @@ export async function GET(req: Request) {
       dailySales,
     },
   });
-}
+});
