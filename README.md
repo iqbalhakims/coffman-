@@ -106,6 +106,27 @@ coffman/
 
 ---
 
+## RBAC Implementation Plan
+
+Permissions:
+- `OWNER` — full read + write
+- `MANAGER` — full read + write
+- `BARISTA` — full read, write only to `/api/sales`
+
+- [x] Prisma schema — add `email`, `password` to `Staff`; run migration + wipe existing data
+- [x] Seed script — create one OWNER account (`admin@coffman.com` / `admin123`)
+- [x] Install `bcryptjs` + `jose`
+- [x] Auth helpers — `lib/auth.ts` for JWT sign/verify, `lib/session.ts` for cookie management
+- [x] `POST /api/auth/login` + `POST /api/auth/logout` routes
+- [x] `middleware.ts` — redirect unauthenticated to `/login`, enforce role-based page access
+- [x] Permission map — define allowed routes per role
+- [x] API route guard helper — `withAuth(handler, requiredRole)` wrapper
+- [x] Wrap all existing API routes with the guard (handled by middleware)
+- [x] Login page — `/login` with credentials form
+- [x] `AppShell` — add user info + logout button, hide nav items based on role
+
+---
+
 ## Getting Started
 
 ```bash

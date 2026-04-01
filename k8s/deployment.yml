@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coffman
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coffman
+  template:
+    metadata:
+      labels:
+        app: coffman
+    spec:
+      containers:
+        - name: coffman
+          image: registry.digitalocean.com/YOUR_REGISTRY/coffman:latest
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - secretRef:
+                name: coffman-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coffman
+  namespace: default
+spec:
+  selector:
+    app: coffman
+  ports:
+    - port: 80
+      targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: coffman
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    - host: YOUR_DOMAIN_OR_IP
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: coffman
+                port:
+                  number: 80
