@@ -1,4 +1,4 @@
-name: Build & Deploy to DOKS
+name: Build & Push to DOCR
 
 on:
   push:
@@ -9,10 +9,9 @@ env:
   REGISTRY: registry.digitalocean.com
   REGISTRY_NAME: ${{ secrets.DO_REGISTRY_NAME }}
   IMAGE_NAME: coffman
-  CLUSTER_NAME: ${{ secrets.DO_CLUSTER_NAME }}
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,7 +23,7 @@ jobs:
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
-      - name: Log in to DigitalOcean Container Registry
+      - name: Log in to DOCR
         run: doctl registry login --expiry-seconds 600
 
       - name: Build Docker image
@@ -33,27 +32,7 @@ jobs:
             --build-arg DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             --build-arg JWT_SECRET="${{ secrets.JWT_SECRET }}" \
             -t $REGISTRY/$REGISTRY_NAME/$IMAGE_NAME:${{ github.sha }} \
-            -t $REGISTRY/$REGISTRY_NAME/$IMAGE_NAME:latest \
             ./app
 
-      - name: Push image to registry
-        run: |
-          docker push $REGISTRY/$REGISTRY_NAME/$IMAGE_NAME:${{ github.sha }}
-          docker push $REGISTRY/$REGISTRY_NAME/$IMAGE_NAME:latest
-
-      - name: Get DOKS kubeconfig
-        run: doctl kubernetes cluster kubeconfig save $CLUSTER_NAME
-
-      - name: Create or update k8s secret
-        run: |
-          kubectl create secret generic coffman-secrets \
-            --from-literal=DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-            --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-            --dry-run=client -o yaml | kubectl apply -f -
-
-      - name: Deploy to DOKS
-        run: |
-          kubectl apply -f k8s/deployment.yml
-          kubectl set image deployment/coffman \
-            coffman=$REGISTRY/$REGISTRY_NAME/$IMAGE_NAME:${{ github.sha }}
-          kubectl rollout status deployment/coffman
+      - name: Push image to DOCR
+        run: docker push $REGISTRY/$REGISTRY_NAME/$IMAGE_NAME:${{ github.sha }}
